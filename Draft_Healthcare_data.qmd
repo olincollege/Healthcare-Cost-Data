@@ -1,0 +1,94 @@
+---
+jupyter: python3
+---
+
+```{python}
+
+with open("medicaid-enrollment-by-state-2024.csv", "r") as file:
+   for line in file:
+    print(line.strip())
+
+import pandas as pd
+
+medicaid_data = pd.read_csv("medicaid-enrollment-by-state-2024.csv")
+# importing in data about the number of people per state enrolled in medicaid on November 1st 2022 as a dataframe
+
+health_care_inflation_data = pd.read_html("https://www.usinflationcalculator.com/inflation/health-care-inflation-in-the-united-states/")[0]
+# importing in data that shows the inflation percentage of health care costs in the US from 1948 to 2022 as a dataframe                   
+
+health_care_inflation_data = health_care_inflation_data.apply(pd.to_numeric, axis=1, downcast='float', errors = 'ignore')
+```
+
+```{python}
+
+
+def find_health_care_costs(starting_cost, yearly_inflation: pd.DataFrame):
+    """
+    Takes the cost of healthcare for a previous year and multiplies it by the inflation rate of the next year, 
+    returning that next years health care costs
+
+    Args:
+        starting_cost: a float type that represents the 
+        yearly_inflation: a list of float types 
+
+    Returns:
+        Returns a list of floats and integers that represent the cost of health care for a range of years
+    """
+    health_care_costs = []
+    
+    for item in yearly_inflation:
+        percent = 1 + (item/100)
+        single_year_cost = (percent * starting_cost)
+        single_year_cost = round(single_year_cost)
+        health_care_costs.append(single_year_cost)
+        starting_cost = single_year_cost
+
+    return health_care_costs
+```
+
+```{python}
+
+#print(health_care_inflation_data)
+
+years = health_care_inflation_data[0]
+
+years.head()
+
+inflation_percentage = health_care_inflation_data[1:78]
+
+#display(inflation_percentage.head)
+
+inflation_percentage.drop(inflation_percentage.columns[0], axis=1, inplace=True)
+
+#display(inflation_percentage.head)
+
+#inflation_percentage.drop(78, axis='index', inplace=True)
+
+#display(inflation_percentage.head)
+
+health_care_inflation_mean = inflation_percentage.mean(axis=1)
+
+#print(health_care_inflation_mean)
+```
+
+```{python}
+
+find_health_care_costs(100, health_care_inflation_mean)
+```
+
+```{python}
+medicaid_data.head()
+
+medicaid_data['state'] = medicaid_data['state'].replace('District of Columbia', 'DC')
+```
+
+```{python}
+total_US_pop_enrolled_MedicaidCm = medicaid_data['MedicaidEnrollmentCmCombinedEnrolled'].sum()
+
+medicaid_data["State Percentage Enrolled Out of Total US"] = ((medicaid_data['MedicaidEnrollmentCmCombinedEnrolled']/total_US_pop_enrolled_MedicaidCm) * 100)
+
+medicaid_data.head()
+
+medicaid_data["State Percentage Enrolled Out of Total US"].plot.pie(subplots=False, figsize=(18,18), fontsize=8, labels=medicaid_data['state'], labeldistance=1.1, startangle=30)
+```
+
